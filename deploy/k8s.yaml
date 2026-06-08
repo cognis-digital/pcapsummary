@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: pcapsummary, labels: { app: pcapsummary } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pcapsummary } }
+  template:
+    metadata: { labels: { app: pcapsummary } }
+    spec:
+      containers:
+        - name: pcapsummary
+          image: ghcr.io/cognis-digital/pcapsummary:latest
+          ports: [{ containerPort: 8000 }]
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pcapsummary }
+spec:
+  selector: { app: pcapsummary }
+  ports: [{ port: 80, targetPort: 8000 }]
