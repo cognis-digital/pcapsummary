@@ -1,0 +1,10 @@
+{
+  "name": "@cognis/pcapsummary",
+  "version": "0.2.0",
+  "description": "JavaScript port of pcapsummary (Cognis Neural Suite)",
+  "bin": {
+    "pcapsummary": "index.js"
+  },
+  "license": "LicenseRef-COCL-1.0",
+  "type": "module"
+}
