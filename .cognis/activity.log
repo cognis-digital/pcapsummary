@@ -1,0 +1,2 @@
+2024-06-14T11:47:37  fix(detect): add usage examples to help
+2024-06-20T18:04:44  refactor(engine): reduce false positives on edge cases
