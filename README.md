@@ -16,7 +16,7 @@
 </div>
 
 ```bash
-pip install cognis-pcapsummary
+pip install "git+https://github.com/cognis-digital/pcapsummary.git"
 pcapsummary scan .            # → prioritized findings in seconds
 ```
 
@@ -47,7 +47,7 @@ pcap at a glance
 ## Quick start
 
 ```bash
-pip install cognis-pcapsummary
+pip install "git+https://github.com/cognis-digital/pcapsummary.git"
 pcapsummary --version
 pcapsummary scan .                       # scan current project
 pcapsummary scan . --format json         # machine-readable
