@@ -20,6 +20,34 @@ pip install cognis-pcapsummary
 pcapsummary scan .            # → prioritized findings in seconds
 ```
 
+## Usage — step by step
+
+`pcapsummary` summarizes flows/talkers/protocols from a pcap **text export** (defensive analysis only; no live capture). Exit codes: `0` clean, `1` findings/parse errors, `2` usage/file error.
+
+1. **Install**:
+   ```bash
+   pip install -e .
+   pcapsummary --version
+   ```
+2. **Produce a text export** with tshark, then summarize it:
+   ```bash
+   tshark -r capture.pcap -T fields -e frame.time_relative -e ip.src -e ip.dst > export.txt
+   pcapsummary summarize export.txt
+   ```
+3. **Tune the report** — cap top talkers/flows with `--top`, or read from stdin:
+   ```bash
+   pcapsummary summarize export.txt --top 20
+   cat export.txt | pcapsummary summarize -
+   ```
+4. **Read the output** as JSON (protocols, talkers, flows, time span):
+   ```bash
+   pcapsummary summarize export.txt --format json | jq '.protocols'
+   ```
+5. **Automate in CI** — a non-zero exit flags parse errors or empty captures:
+   ```bash
+   pcapsummary summarize export.txt --format json > pcap.json || echo "parse issues"
+   ```
+
 ## Contents
 
 - [Why pcapsummary?](#why) · [Features](#features) · [Quick start](#quick-start) · [Example](#example) · [Architecture](#architecture) · [AI stack](#ai-stack) · [How it compares](#how-it-compares) · [Integrations](#integrations) · [Install anywhere](#install-anywhere) · [Related](#related) · [Contributing](#contributing)
