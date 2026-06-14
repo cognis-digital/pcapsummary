@@ -34,3 +34,6 @@ pcapsummary = "pcapsummary.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pcapsummary"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
