@@ -264,7 +264,8 @@ def parse_export(text: str) -> tuple:
     if not cleaned_lines:
         return [], 0
 
-    reader = list(csv.reader(io.StringIO("\n".join(cleaned_lines)), delimiter=delimiter))
+    joined = chr(10).join(cleaned_lines)
+    reader = list(csv.reader(io.StringIO(joined), delimiter=delimiter))
     if not reader:
         return [], 0
 
@@ -382,3 +383,7 @@ def summarize(
         parse_errors=parse_errors,
         time_span=time_span,
     )
+
+# Tool identity — consumed by cli.py and __init__.py.
+TOOL_NAME: str = "pcapsummary"
+TOOL_VERSION: str = "0.1.0"

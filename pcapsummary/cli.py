@@ -44,7 +44,8 @@ def _render_table(summary, top: int) -> str:
     lines.append(f"{'PROTO':<12}{'PKTS':>8}{'BYTES':>12}{'PKT%':>8}")
     for p in summary.protocols:
         lines.append(
-            f"{p['proto']:<12}{p['packets']:>8}{p['bytes']:>12}{p['packets_pct']:>7}%"
+            f"{p['proto']:<12}{p['packets']:>8}{p['bytes']:>12}"
+            f"{p['packets_pct']:>7}%"
         )
     lines.append("")
 
@@ -75,14 +76,26 @@ def _render_table(summary, top: int) -> str:
 
 
 def _cmd_summarize(args) -> int:
+    # Validate --top early so the user gets a clear message before any I/O.
+    if args.top < 1:
+        print(
+            f"error: --top must be at least 1 (got {args.top})",
+            file=sys.stderr,
+        )
+        return 2
+
     try:
         text = _read_input(args.input)
     except OSError as exc:
         print(f"error: cannot read {args.input}: {exc}", file=sys.stderr)
         return 2
 
-    packets, errors = parse_export(text)
-    summary = summarize(packets, parse_errors=errors, top=args.top)
+    try:
+        packets, errors = parse_export(text)
+        summary = summarize(packets, parse_errors=errors, top=args.top)
+    except Exception as exc:  # pragma: no cover
+        print(f"error: failed to parse input: {exc}", file=sys.stderr)
+        return 2
 
     if args.format == "json":
         print(json.dumps(summary.as_dict(), indent=2, sort_keys=True))
@@ -126,7 +139,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--top",
         type=int,
         default=10,
-        help="number of top talkers/flows to show (default: 10)",
+        help="number of top talkers/flows to show (default: 10, min: 1)",
     )
     p_sum.set_defaults(func=_cmd_summarize)
     return parser
