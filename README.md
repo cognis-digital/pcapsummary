@@ -39,9 +39,11 @@ pcapsummary scan .            # → prioritized findings in seconds
    pcapsummary summarize export.txt --top 20
    cat export.txt | pcapsummary summarize -
    ```
-4. **Read the output** as JSON (protocols, talkers, flows, time span):
+4. **Read the output** as JSON (protocols, talkers, flows, time span) or CSV
+   (one row per flow — drops straight into a spreadsheet or pandas):
    ```bash
    pcapsummary summarize export.txt --format json | jq '.protocols'
+   pcapsummary summarize export.txt --format csv  > flows.csv
    ```
 5. **Automate in CI** — a non-zero exit flags parse errors or empty captures:
    ```bash
@@ -50,7 +52,7 @@ pcapsummary scan .            # → prioritized findings in seconds
 
 ## Contents
 
-- [Why pcapsummary?](#why) · [Features](#features) · [Quick start](#quick-start) · [Example](#example) · [Architecture](#architecture) · [AI stack](#ai-stack) · [How it compares](#how-it-compares) · [Integrations](#integrations) · [Install anywhere](#install-anywhere) · [Related](#related) · [Contributing](#contributing)
+- [Why pcapsummary?](#why) · [Features](#features) · [Quick start](#quick-start) · [Example](#example) · [Demos](#demos) · [Architecture](#architecture) · [AI stack](#ai-stack) · [How it compares](#how-it-compares) · [Integrations](#integrations) · [Install anywhere](#install-anywhere) · [Related](#related) · [Contributing](#contributing)
 
 <a name="why"></a>
 ## Why pcapsummary?
@@ -64,8 +66,11 @@ pcap at a glance
 <a name="features"></a>
 ## Features
 
-- ✅ Parse Export
-- ✅ Summarize
+- ✅ Parse comma- **or** tab-separated tshark/Wireshark text exports (header auto-detect)
+- ✅ Summarize flows, top talkers (bidirectional), and protocol distribution
+- ✅ Output as **table**, **JSON**, or **CSV** (one row per flow)
+- ✅ Exit codes for CI gating (`0` clean · `1` parse errors/empty · `2` usage)
+- ✅ Eight worked [demo scenarios](#demos) (scan, beacon, exfil, DNS tunnel, lateral, …)
 - ✅ Runs on Linux/macOS/Windows · Docker · devcontainer
 - ✅ Ports in Python, JavaScript, Go, and Rust (`ports/`)
 
@@ -94,6 +99,40 @@ $ pcapsummary scan .
 
   2 findings · risk score 5 · 38ms
 ```
+
+<div align="right"><a href="#top">↑ back to top</a></div>
+
+<a name="demos"></a>
+## Demos
+
+Eight ready-to-run scenarios live in [`demos/`](demos/). Each folder has a
+realistic tshark/Wireshark **text export** in the tool's real input format plus
+a `SCENARIO.md` explaining where the data came from, the exact run command,
+what to expect, and how to act. Every demo is exercised by the test suite to
+guarantee it still produces its intended shape.
+
+| Demo | Scenario | What it shows |
+|---|---|---|
+| [`01-basic`](demos/01-basic/) | Short authorized capture | Top talker, protocol mix, flow table at a glance |
+| [`02-port-scan`](demos/02-port-scan/) | Vertical TCP port scan | One host fanning out across 20 ports → many single-packet flows |
+| [`03-beaconing`](demos/03-beaconing/) | Periodic C2-style beacon | Uniform tiny TLS flows to one external IP every ~60 s |
+| [`04-exfil-volume`](demos/04-exfil-volume/) | Outbound volume asymmetry | Upload-skewed flow ≫ return bytes (possible exfil) |
+| [`05-dns-tunnel`](demos/05-dns-tunnel/) | DNS tunneling | DNS at ~90% of packets with oversized queries |
+| [`06-tab-export`](demos/06-tab-export/) | Wireshark TSV export | Tab/header auto-detect, IPv6 endpoints |
+| [`07-malformed-ci`](demos/07-malformed-ci/) | Corrupted export | Parse-error counting + exit code `1` for CI gates |
+| [`08-office-baseline`](demos/08-office-baseline/) | Healthy business-hours LAN | A clean baseline to diff anomalies against |
+| [`09-smb-lateral`](demos/09-smb-lateral/) | SMB horizontal sweep | One host touching many peers on `445` (lateral movement) |
+
+```bash
+# Triage the scan demo as a table, then export its flows to CSV
+python -m pcapsummary summarize demos/02-port-scan/capture_export.txt
+python -m pcapsummary summarize demos/02-port-scan/capture_export.txt --format csv
+```
+
+> All demos use private RFC 1918 addresses, RFC 5737 documentation ranges
+> (`203.0.113.0/24`, `198.51.100.0/24`), or real well-known public service IPs.
+> They are **static analysis of already-captured exports** — no live capture,
+> no network connections, authorized defensive use only.
 
 <div align="right"><a href="#top">↑ back to top</a></div>
 

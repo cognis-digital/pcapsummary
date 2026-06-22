@@ -1,0 +1,8 @@
+frame.number,frame.time_relative,ip.src,ip.dst,_ws.col.Protocol,tcp.srcport,tcp.dstport,udp.srcport,udp.dstport,frame.len
+1,0.000000,10.1.1.5,10.1.1.6,TCP,5001,80,,,120
+2,0.001000,10.1.1.6,10.1.1.5,TCP,80,5001,,,1380
+3,0.002000,,,TCP,5001,80,,,90
+4,0.003000,10.1.1.5,10.1.1.6,TCP,5001,80,,,200
+5,truncated-row-no-fields
+6,0.005000,10.1.1.5,,TCP,5001,80,,,150
+7,0.006000,10.1.1.6,10.1.1.5,TCP,80,5001,,,1380

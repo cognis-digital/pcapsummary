@@ -1,7 +1,7 @@
 """Command-line interface for PCAPSUMMARY.
 
 Usage:
-    pcapsummary summarize <export.txt> [--format table|json] [--top N]
+    pcapsummary summarize <export.txt> [--format table|json|csv] [--top N]
     pcapsummary --version
 
 Exit codes:
@@ -13,6 +13,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
 from typing import Optional
@@ -74,6 +75,35 @@ def _render_table(summary, top: int) -> str:
     return "\n".join(lines)
 
 
+def _render_csv(summary) -> str:
+    """Emit one row per flow as CSV — convenient for spreadsheets / pandas.
+
+    Flows are already sorted by (bytes, packets) descending in the summary, so
+    the heaviest flows appear first. Header row is always present.
+    """
+    import csv as _csv
+
+    buf = io.StringIO()
+    writer = _csv.writer(buf, lineterminator="\n")
+    writer.writerow(
+        ["src", "sport", "dst", "dport", "proto", "packets", "bytes", "duration"]
+    )
+    for f in summary.flows:
+        writer.writerow(
+            [
+                f.src,
+                "" if f.sport is None else f.sport,
+                f.dst,
+                "" if f.dport is None else f.dport,
+                f.proto,
+                f.packets,
+                f.bytes,
+                f.duration,
+            ]
+        )
+    return buf.getvalue().rstrip("\n")
+
+
 def _cmd_summarize(args) -> int:
     try:
         text = _read_input(args.input)
@@ -86,6 +116,8 @@ def _cmd_summarize(args) -> int:
 
     if args.format == "json":
         print(json.dumps(summary.as_dict(), indent=2, sort_keys=True))
+    elif args.format == "csv":
+        print(_render_csv(summary))
     else:
         print(_render_table(summary, args.top))
 
@@ -118,9 +150,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_sum.add_argument(
         "--format",
-        choices=["table", "json"],
+        choices=["table", "json", "csv"],
         default="table",
-        help="output format (default: table)",
+        help="output format (default: table). csv emits one row per flow.",
     )
     p_sum.add_argument(
         "--top",
