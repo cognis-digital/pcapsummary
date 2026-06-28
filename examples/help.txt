@@ -1,0 +1,14 @@
+$ pcapsummary-emit --help
+
+usage: pcapsummary [-h] [--version] {summarize} ...
+
+Summarize flows/talkers/protocols from a pcap text export (defensive analysis
+only; no live capture).
+
+positional arguments:
+  {summarize}
+    summarize  summarize a tshark-style text export
+
+options:
+  -h, --help   show this help message and exit
+  --version    show program's version number and exit
