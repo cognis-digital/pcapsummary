@@ -163,26 +163,30 @@ $ pcapsummary scan .
 <a name="demos"></a>
 ## Demos
 
-Eight ready-to-run scenarios live in [`demos/`](demos/). Each folder has a
-realistic tshark/Wireshark **text export** in the tool's real input format plus
-a `SCENARIO.md` explaining where the data came from, the exact run command,
-what to expect, and how to act. Every demo is exercised by the test suite to
-guarantee it still produces its intended shape.
+Five **runnable, narrated scenarios** live in [`demos/`](demos/) — each runs the
+real `pcapsummary` API/CLI over a bundled offline capture export and explains
+the result for a specific audience. Every one exits `0` and is exercised by the
+test suite. Full write-up: [`docs/DEMOS.md`](docs/DEMOS.md).
 
-| Demo | Scenario | What it shows |
+| Demo | Audience | What it shows |
 |---|---|---|
-| [`01-basic`](demos/01-basic/) | Short authorized capture | Top talker, protocol mix, flow table at a glance |
-| [`02-port-scan`](demos/02-port-scan/) | Vertical TCP port scan | One host fanning out across 20 ports → many single-packet flows |
-| [`03-beaconing`](demos/03-beaconing/) | Periodic C2-style beacon | Uniform tiny TLS flows to one external IP every ~60 s |
-| [`04-exfil-volume`](demos/04-exfil-volume/) | Outbound volume asymmetry | Upload-skewed flow ≫ return bytes (possible exfil) |
-| [`05-dns-tunnel`](demos/05-dns-tunnel/) | DNS tunneling | DNS at ~90% of packets with oversized queries |
-| [`06-tab-export`](demos/06-tab-export/) | Wireshark TSV export | Tab/header auto-detect, IPv6 endpoints |
-| [`07-malformed-ci`](demos/07-malformed-ci/) | Corrupted export | Parse-error counting + exit code `1` for CI gates |
-| [`08-office-baseline`](demos/08-office-baseline/) | Healthy business-hours LAN | A clean baseline to diff anomalies against |
-| [`09-smb-lateral`](demos/09-smb-lateral/) | SMB horizontal sweep | One host touching many peers on `445` (lateral movement) |
+| [`01_soc_triage`](demos/01_soc_triage.py) | Network / SOC analyst | Top talkers, dominant protocol, heaviest flow — pcap at a glance |
+| [`02_threat_hunter_scan`](demos/02_threat_hunter_scan.py) | Threat hunter | One source fanning across 20 ports on one target = vertical TCP scan |
+| [`03_ir_beacon_and_exfil`](demos/03_ir_beacon_and_exfil.py) | IR / forensics | Uniform C2 beacon cadence + upload-skewed byte asymmetry (exfil) |
+| [`04_sysadmin_ci_gate`](demos/04_sysadmin_ci_gate.py) | Sysadmin / DevOps | Distinct `0`/`1`/`2` exit codes a CI pipeline can gate on |
+| [`05_dns_tunnel_and_lateral`](demos/05_dns_tunnel_and_lateral.py) | Threat hunter / SOC | DNS dominance vs baseline + SMB sweep across `445` (lateral) |
 
 ```bash
-# Triage the scan demo as a table, then export its flows to CSV
+PYTHONUTF8=1 python demos/run_all.py                 # all five, end to end
+PYTHONUTF8=1 python demos/02_threat_hunter_scan.py   # or just one
+```
+
+Each scenario reads the capture fixtures in the `demos/NN-*/` folders, which
+also carry a `SCENARIO.md` documenting how the export was produced. Triage one
+directly with the CLI:
+
+```bash
+# Triage the scan capture as a table, then export its flows to CSV
 python -m pcapsummary summarize demos/02-port-scan/capture_export.txt
 python -m pcapsummary summarize demos/02-port-scan/capture_export.txt --format csv
 ```
@@ -199,9 +203,13 @@ python -m pcapsummary summarize demos/02-port-scan/capture_export.txt --format c
 
 ```mermaid
 flowchart LR
-  IN[capture / scan] --> P[pcapsummary<br/>parse + map]
-  P --> OUT[report]
+  EXP["tshark / Wireshark<br/>text export"] --> PARSE["parse_export()<br/>dialect + header detect"]
+  PARSE --> SUM["summarize()<br/>flows · talkers · protocols"]
+  SUM --> OUT["table · JSON · CSV"]
+  SUM --> MCP["MCP server<br/>(agents)"]
 ```
+
+Full pipeline and data model: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 <div align="right"><a href="#top">↑ back to top</a></div>
 
