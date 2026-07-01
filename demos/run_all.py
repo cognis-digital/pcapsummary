@@ -23,6 +23,21 @@ SCENARIOS = [
     "03_ir_beacon_and_exfil",
     "04_sysadmin_ci_gate",
     "05_dns_tunnel_and_lateral",
+    "06_detector_sweep",
+    "07_threshold_tuning",
+    "08_detect_cli_gate",
+    "09_exfil_asymmetry",
+    "10_beacon_cadence",
+    "11_smb_lateral_hunt",
+    "12_tab_export_ingest",
+    "13_malformed_resilience",
+    "14_protocol_baseline_diff",
+    "15_top_talkers_report",
+    "16_json_pipeline",
+    "17_selective_detectors",
+    "18_full_triage",
+    "19_topn_focus",
+    "20_empty_capture_guard",
 ]
 
 

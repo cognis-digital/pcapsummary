@@ -22,6 +22,12 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Iterable, Optional
 
+# Single source of truth for tool identity. ``__init__`` re-exports these; the
+# CLI ``--version`` and table header read them. Keep in sync with the top-level
+# ``VERSION`` file and ``pyproject.toml``.
+TOOL_NAME = "pcapsummary"
+TOOL_VERSION = "0.5.0"
+
 # Canonical field names we try to populate per packet.
 _FIELD_ALIASES = {
     "frame.number": "number",
@@ -301,6 +307,8 @@ def summarize(
     top: int = 10,
 ) -> Summary:
     """Aggregate packets into flows, talkers, and protocol distribution."""
+    if top < 0:
+        raise ValueError("top must be >= 0")
     packets = list(packets)
     flows: dict = {}
     proto_packets: Counter = Counter()

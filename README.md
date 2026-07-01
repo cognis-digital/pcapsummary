@@ -37,19 +37,20 @@ Real, reproducible output from the tool — runs offline:
 
 ```console
 $ pcapsummary-emit --version
-pcapsummary 0.1.0
+pcapsummary 0.5.0
 ```
 
 ```console
-$ pcapsummary-emit --help
-usage: pcapsummary [-h] [--version] {summarize} ...
+$ pcapsummary --help
+usage: pcapsummary [-h] [--version] {summarize,detect} ...
 
 Summarize flows/talkers/protocols from a pcap text export (defensive analysis
 only; no live capture).
 
 positional arguments:
-  {summarize}
+  {summarize,detect}
     summarize  summarize a tshark-style text export
+    detect     run heuristic detectors (port-scan / beacon / exfil / dns-tunnel)
 
 options:
   -h, --help   show this help message and exit
@@ -116,6 +117,16 @@ options:
    ```bash
    pcapsummary summarize export.txt --format json > pcap.json || echo "parse issues"
    ```
+6. **Run the heuristic detectors** — port scan, C2 beacon, upload-skewed exfil,
+   and DNS tunneling. `detect` exits `1` if anything fires (gate CI on it),
+   `0` on a clean capture, `2` on a usage/empty error. Thresholds are tunable
+   in [`pcapsummary/detectors.py`](pcapsummary/detectors.py):
+   ```bash
+   pcapsummary detect export.txt
+   pcapsummary detect export.txt --only port_scan,exfil --format json
+   ```
+   These are explainable heuristics, not an IDS — every finding carries the
+   evidence numbers behind it so you can triage the call.
 
 ## Contents
 
