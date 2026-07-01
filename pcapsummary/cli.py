@@ -20,6 +20,7 @@ from typing import Optional
 
 from . import TOOL_NAME, TOOL_VERSION
 from .core import parse_export, summarize
+from .detectors import DETECTORS, run_all as run_detectors
 
 
 def _read_input(path: str) -> str:
@@ -105,6 +106,9 @@ def _render_csv(summary) -> str:
 
 
 def _cmd_summarize(args) -> int:
+    if args.top < 1:
+        print("error: --top must be a positive integer", file=sys.stderr)
+        return 2
     try:
         text = _read_input(args.input)
     except OSError as exc:
@@ -129,6 +133,65 @@ def _cmd_summarize(args) -> int:
     if summary.parse_errors > 0:
         return 1
     return 0
+
+
+_SEV_ORDER = {"high": 0, "medium": 1, "low": 2}
+
+
+def _render_findings_table(findings: list) -> str:
+    lines = [f"{TOOL_NAME} {TOOL_VERSION} - detections", "=" * 52]
+    if not findings:
+        lines.append("No detections. Traffic looks clean against current thresholds.")
+        return "\n".join(lines)
+    lines.append(f"{len(findings)} detection(s):")
+    lines.append("")
+    for f in findings:
+        lines.append(f"[{f['severity'].upper():<6}] {f['type']}: {f['title']}")
+    return "\n".join(lines)
+
+
+def _cmd_detect(args) -> int:
+    if args.top < 1:
+        print("error: --top must be a positive integer", file=sys.stderr)
+        return 2
+    try:
+        text = _read_input(args.input)
+    except OSError as exc:
+        print(f"error: cannot read {args.input}: {exc}", file=sys.stderr)
+        return 2
+
+    only = None
+    if args.only:
+        only = [n.strip() for n in args.only.split(",") if n.strip()]
+        unknown = [n for n in only if n not in DETECTORS]
+        if unknown:
+            print(
+                f"error: unknown detector(s): {', '.join(unknown)}; "
+                f"choose from {', '.join(sorted(DETECTORS))}",
+                file=sys.stderr,
+            )
+            return 2
+
+    packets, errors = parse_export(text)
+    summary = summarize(packets, parse_errors=errors, top=args.top)
+
+    if summary.total_packets == 0:
+        print("no packets parsed from input", file=sys.stderr)
+        return 2
+
+    try:
+        findings = run_detectors(summary, only=only)
+    except KeyError as exc:  # defensive; unknown names already screened above
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    if args.format == "json":
+        print(json.dumps(findings, indent=2, sort_keys=True))
+    else:
+        print(_render_findings_table(findings))
+
+    # Exit-code contract: 1 when any detection fires (so CI can gate), else 0.
+    return 1 if findings else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -161,6 +224,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="number of top talkers/flows to show (default: 10)",
     )
     p_sum.set_defaults(func=_cmd_summarize)
+
+    p_det = sub.add_parser(
+        "detect",
+        help="run heuristic detectors (port-scan / beacon / exfil / dns-tunnel)",
+    )
+    p_det.add_argument("input", help="path to text export, or '-' for stdin")
+    p_det.add_argument(
+        "--format",
+        choices=["table", "json"],
+        default="table",
+        help="output format (default: table)",
+    )
+    p_det.add_argument(
+        "--only",
+        default=None,
+        help="comma-separated subset of detectors to run "
+        f"(choices: {', '.join(sorted(DETECTORS))})",
+    )
+    p_det.add_argument(
+        "--top",
+        type=int,
+        default=10,
+        help="top talkers/flows retained in the summary (default: 10)",
+    )
+    p_det.set_defaults(func=_cmd_detect)
     return parser
 
 
